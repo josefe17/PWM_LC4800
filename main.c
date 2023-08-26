@@ -282,7 +282,7 @@ void set_PWM5 (unsigned char dc){
     CCP5CONbits.DC5B=(dt_map[dc] & 3);
 }
 
-void interrupt ISR(void)
+void __interrupt() ISR(void)
 {
   if(INTCONbits.T0IF){
       INTCONbits.T0IF=0;    //Clear flag
