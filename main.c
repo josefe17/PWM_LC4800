@@ -120,14 +120,14 @@ void main(void)
     
     /*ADC configurations*/
     
-    ANCON0=0b11111111;      //Ports 0-3 as ADC input
+    ANCON0=0b00001111;      //Ports 0-3 as ADC input
     ANCON1=0;
     ADCON1bits.VCFG=0;      //AVDD ref
     ADCON1bits.VNCFG=0;     //AVSS red
-    ADCON1bits.CHSN=0b101;  //AN4 Negative reference  0b101
+    ADCON1bits.CHSN=0b000;  //AN4 Negative reference  0b101
     ADCON2bits.ADFM=0;      //Left justified
-    ADCON2bits.ACQT=0;
-    ADCON2bits.ADCS=7;      //RC osc TAD????????
+    ADCON2bits.ACQT=0b111;  //4 Tad auto adqusition
+    ADCON2bits.ADCS=0b001;  //Fosc/8
 
     dmx_rx_ok=0;               //Pre invalidate DMX frames
 
@@ -168,7 +168,8 @@ void main(void)
     while(1){
  
        dmx_start_address=read_addr();         //Read DIP switch address
-                    
+         
+       /*
         analog_index=0;
         ADCON0bits.ADON=1;
         ADCON0bits.CHS=analog_index;
@@ -181,6 +182,24 @@ void main(void)
             analog_buffer[analog_index-1]=ADRESH;
             ADRESH=0;
             ADRESL=0;
+        }
+        */
+        
+        analog_index=0;
+        while (analog_index < CHANNELS)
+        {
+            ADCON0bits.CHS = analog_index & 3;
+            ADCON1bits.CHSN=0b000;      //AN4 Negative reference  0b101
+            __delay_us(3);              // Wait 3 tad between readings
+            ADCON0bits.ADON=1;          // Enable ADC
+            ADCON0bits.GO_NOT_DONE=1;   //Start conversion with 4 Tad Adquisition time
+            while (ADCON0bits.GO_NOT_DONE);  //Wait for conversion
+            analog_buffer[analog_index]=ADRESH;   
+            ADRESL=0;
+            ADRESH=0;            
+            ADCON0bits.ADON=0;          // Disable ADC
+            __delay_us(3);              // Wait 3 tad between readings
+            ++analog_index;
         }
 
             /*
