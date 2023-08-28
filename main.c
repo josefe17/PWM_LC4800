@@ -210,46 +210,46 @@ void main(void)
      
 */
         if (dmx_start_address>(TOTALCHANNELS-CHANNELS)){ //If address is higher than 508, 4th channel is just analog controlled
-            set_PWM4(analog_buffer[3]);
+            set_PWM4(analog_buffer[1]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-1)]>analog_buffer[3]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-1)]>analog_buffer[1]) && dmx_rx_ok && dmx_en){
                 set_PWM4(FrameDMX[dmx_start_address+(CHANNELS-1)]);
             }
             else{
-               set_PWM4(analog_buffer[3]);
+               set_PWM4(analog_buffer[1]);
             }
         }
         
         if (dmx_start_address>(TOTALCHANNELS-CHANNELS+1)){ //If address is higher than 509, 3rd channel is just analog controlled
-            set_PWM5(analog_buffer[2]);
+            set_PWM5(analog_buffer[0]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-2)]>analog_buffer[2]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-2)]>analog_buffer[0]) && dmx_rx_ok && dmx_en){
                 set_PWM5(FrameDMX[dmx_start_address+(CHANNELS-2)]);
             }
             else{
-               set_PWM5(analog_buffer[2]);
+               set_PWM5(analog_buffer[0]);
             }            
         }
         
         if (dmx_start_address>(TOTALCHANNELS-CHANNELS+2)){ //If address is higher than 510, 2nd channel is just analog controlled
-            set_PWM2(analog_buffer[1]);
+            set_PWM2(analog_buffer[3]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-3)]>analog_buffer[1]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-3)]>analog_buffer[3]) && dmx_rx_ok && dmx_en){
                 set_PWM2(FrameDMX[dmx_start_address+(CHANNELS-3)]);
             }
             else{
-               set_PWM2(analog_buffer[1]);
+               set_PWM2(analog_buffer[3]);
             } 
         }
         
-        if((FrameDMX[dmx_start_address]>analog_buffer[0]) && dmx_rx_ok && dmx_en){
+        if((FrameDMX[dmx_start_address]>analog_buffer[2]) && dmx_rx_ok && dmx_en){
             set_PWM3(FrameDMX[dmx_start_address]);
         }
         else{
-            set_PWM3(analog_buffer[0]);
+            set_PWM3(analog_buffer[2]);
         }
  
     }
