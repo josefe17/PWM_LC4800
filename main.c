@@ -148,15 +148,15 @@ void main(void)
     
     /*Interrupt Configuration*/
     
-    RCONbits.IPEN=0;            //Interruption priority enable
+    RCONbits.IPEN=1;            //Interruption priority enable
+    IPR3bits.RC2IP=0;           //EUSART Receiving low priority interrupt
     PIE3bits.RC2IE=1;           //EUSART Receiving Interrupt Enable
     PIR3bits.RC2IF=0;           //Clear EUSART interruption flag
-    PIE1bits.ADIE = 0;          //Disable ADC interrupt
+    INTCON2bits.TMR0IP=1;       //Timer0 high priority interrupt
     INTCONbits.T0IE=1;          //Enable timer0 interrupts
     INTCONbits.T0IF=0;          //Clear timer0 interrupt
-    INTCONbits.GIE_GIEH = 1;    //Global interrupts enable
-    INTCONbits.PEIE_GIEL=1;     //Peripheral interrupts enable
-    //INTCONbits.GIE_GIEH = 0;    //Global interrupts enable
+    INTCONbits.GIE_GIEH = 1;    //High priority interrupts enable
+    INTCONbits.PEIE_GIEL=1;     //Low priority interrupts enable
     
     dmx_start_address = 0;                   //Clear DMX starting address
     TMR0H=0; 
@@ -304,14 +304,19 @@ void set_PWM5 (uint8_t dc){
     CCP5CONbits.DC5B=(dt_map[dc] & 3);
 }
 
-void __interrupt() ISR(void)
+
+
+void __interrupt(high_priority) ISRHigh(void)
 {
   if(INTCONbits.T0IF){
       INTCONbits.T0IF=0;    //Clear flag
       dmx_rx_ok=0; //Invalidate DMX values
       T0CON=0;  //Stop timer
   }
-    
+}
+ 
+void __interrupt(low_priority) ISRLow(void)
+{
    while (PIR3bits.RC2IF) // ejecutamos mientras haya un dato pendiente de procesar
    {
     // Hacemos una copia del registro RCSTA porque sus bits cambian de valor
