@@ -28,14 +28,13 @@
 #define _XTAL_FREQ 8000000
 
 #include <xc.h>
+#include <stdint.h>
 #include "config.h"
 
 /*Tri-State ports*/
 #define IN   1
 #define OUT  0
 
-/*RS-485 enabling*/
-#define dmx_en PORTBbits.RB4
 
 /*DMX safety timer*/
 #define t0_res_1 0b10000100
@@ -53,53 +52,56 @@
 
 /*Function prototypes*/
 
-int read_addr(void);
-void set_PWM2(unsigned char); //ojo al cambiar el modo pq el mapping es int!!!!!!!!!!!!
-void set_PWM3(unsigned char);
-void set_PWM4(unsigned char);
-void set_PWM5(unsigned char);
+uint16_t read_addr(void);
+void set_PWM2(uint8_t); //ojo al cambiar el modo pq el mapping es int!!!!!!!!!!!!
+void set_PWM3(uint8_t);
+void set_PWM4(uint8_t);
+void set_PWM5(uint8_t);
 
 
 /*DMX Variables*/
-volatile unsigned char DMX_Estado = DMX_ESPERA_BREAK;  //FSM status
-volatile unsigned char DatoRX;                          //Recived data
-//const unsigned char dt_map[] = { 95, 95, 96, 97, 97, 98, 99, 99, 100, 100, 101, 102, 102, 103, 104, 104, 105, 105, 106, 107, 107, 108, 109, 109, 110, 110, 111, 112, 112, 113, 114, 114, 115, 116, 116, 117, 117, 118, 119, 119, 120, 121, 121, 122, 122, 123, 124, 124, 125, 126, 126, 127, 127, 128, 129, 129, 130, 131, 131, 132, 132, 133, 134, 134, 135, 136, 136, 137, 137, 138, 139, 139, 140, 141, 141, 142, 142, 143, 144, 144, 145, 146, 146, 147, 147, 148, 149, 149, 150, 151, 151, 152, 152, 153, 154, 154, 155, 156, 156, 157, 157, 158, 159, 159, 160, 161, 161, 162, 162, 163, 164, 164, 165, 166, 166, 167, 167, 168, 169, 169, 170, 171, 171, 172, 172, 173, 174, 174, 175, 176, 176, 177, 177, 178, 179, 179, 180, 181, 181, 182, 182, 183, 184, 184, 185, 186, 186, 187, 187, 188, 189, 189, 190, 191, 191, 192, 192, 193, 194, 194, 195, 196, 196, 197, 197, 198, 199, 199, 200, 201, 201, 202, 202, 203, 204, 204, 205, 206, 206, 207, 207, 208, 209, 209, 210, 211, 211, 212, 212, 213, 214, 214, 215, 216, 216, 217, 217, 218, 219, 219, 220, 221, 221, 222, 222, 223, 224, 224, 225, 226, 226, 227, 227, 228, 229, 229, 230, 231, 231, 232, 232, 233, 234, 234, 235, 236, 236, 237, 237, 238, 239, 239, 240, 241, 241, 242, 242, 243, 244, 244, 245, 246, 246, 247, 247, 248, 249, 249, 250, 251, 251, 252, 252, 253, 254, 255};
-const unsigned char dt_map[] = { 72, 73, 74, 75, 75, 76, 77, 77, 78, 79, 80, 80, 81, 82, 82, 83, 84, 85, 85, 86, 87, 87, 88, 89, 90, 90, 91, 92, 92, 93, 94, 95, 95, 96, 97, 97, 98, 99, 100, 100, 101, 102, 102, 103, 104, 105, 105, 106, 107, 107, 108, 109, 110, 110, 111, 112, 112, 113, 114, 114, 115, 116, 117, 117, 118, 119, 119, 120, 121, 122, 122, 123, 124, 124, 125, 126, 127, 127, 128, 129, 129, 130, 131, 132, 132, 133, 134, 134, 135, 136, 137, 137, 138, 139, 139, 140, 141, 142, 142, 143, 144, 144, 145, 146, 147, 147, 148, 149, 149, 150, 151, 152, 152, 153, 154, 154, 155, 156, 157, 157, 158, 159, 159, 160, 161, 162, 162, 163, 164, 164, 165, 166, 167, 167, 168, 169, 169, 170, 171, 172, 172, 173, 174, 174, 175, 176, 177, 177, 178, 179, 179, 180, 181, 182, 182, 183, 184, 184, 185, 186, 187, 187, 188, 189, 189, 190, 191, 192, 192, 193, 194, 194, 195, 196, 197, 197, 198, 199, 199, 200, 201, 202, 202, 203, 204, 204, 205, 206, 207, 207, 208, 209, 209, 210, 211, 211, 212, 213, 214, 214, 215, 216, 216, 217, 218, 219, 219, 220, 221, 221, 222, 223, 224, 224, 225, 226, 226, 227, 228, 229, 229, 230, 231, 231, 232, 233, 234, 234, 235, 236, 236, 237, 238, 239, 239, 240, 241, 241, 242, 243, 244, 244, 245, 246, 246, 247, 248, 249, 249, 250, 251, 251, 252, 253, 254, 255 };
-volatile int DMX_Indice = 0;                              //Loop variable for FrameDMX
-volatile unsigned char FrameDMX[TOTALCHANNELS]={0};       //Received DMX values
-volatile int dmx_start_address=0;                        //Starting address
-volatile unsigned char dmx_rx_ok=0;                      //RX valid variable                   
+volatile uint8_t DMX_Estado = DMX_ESPERA_BREAK;  //FSM status
+volatile uint8_t DatoRX;                          //Recived data
+//const uint8_t dt_map[] = { 95, 95, 96, 97, 97, 98, 99, 99, 100, 100, 101, 102, 102, 103, 104, 104, 105, 105, 106, 107, 107, 108, 109, 109, 110, 110, 111, 112, 112, 113, 114, 114, 115, 116, 116, 117, 117, 118, 119, 119, 120, 121, 121, 122, 122, 123, 124, 124, 125, 126, 126, 127, 127, 128, 129, 129, 130, 131, 131, 132, 132, 133, 134, 134, 135, 136, 136, 137, 137, 138, 139, 139, 140, 141, 141, 142, 142, 143, 144, 144, 145, 146, 146, 147, 147, 148, 149, 149, 150, 151, 151, 152, 152, 153, 154, 154, 155, 156, 156, 157, 157, 158, 159, 159, 160, 161, 161, 162, 162, 163, 164, 164, 165, 166, 166, 167, 167, 168, 169, 169, 170, 171, 171, 172, 172, 173, 174, 174, 175, 176, 176, 177, 177, 178, 179, 179, 180, 181, 181, 182, 182, 183, 184, 184, 185, 186, 186, 187, 187, 188, 189, 189, 190, 191, 191, 192, 192, 193, 194, 194, 195, 196, 196, 197, 197, 198, 199, 199, 200, 201, 201, 202, 202, 203, 204, 204, 205, 206, 206, 207, 207, 208, 209, 209, 210, 211, 211, 212, 212, 213, 214, 214, 215, 216, 216, 217, 217, 218, 219, 219, 220, 221, 221, 222, 222, 223, 224, 224, 225, 226, 226, 227, 227, 228, 229, 229, 230, 231, 231, 232, 232, 233, 234, 234, 235, 236, 236, 237, 237, 238, 239, 239, 240, 241, 241, 242, 242, 243, 244, 244, 245, 246, 246, 247, 247, 248, 249, 249, 250, 251, 251, 252, 252, 253, 254, 255};
+const uint8_t dt_map[] = { 72, 73, 74, 75, 75, 76, 77, 77, 78, 79, 80, 80, 81, 82, 82, 83, 84, 85, 85, 86, 87, 87, 88, 89, 90, 90, 91, 92, 92, 93, 94, 95, 95, 96, 97, 97, 98, 99, 100, 100, 101, 102, 102, 103, 104, 105, 105, 106, 107, 107, 108, 109, 110, 110, 111, 112, 112, 113, 114, 114, 115, 116, 117, 117, 118, 119, 119, 120, 121, 122, 122, 123, 124, 124, 125, 126, 127, 127, 128, 129, 129, 130, 131, 132, 132, 133, 134, 134, 135, 136, 137, 137, 138, 139, 139, 140, 141, 142, 142, 143, 144, 144, 145, 146, 147, 147, 148, 149, 149, 150, 151, 152, 152, 153, 154, 154, 155, 156, 157, 157, 158, 159, 159, 160, 161, 162, 162, 163, 164, 164, 165, 166, 167, 167, 168, 169, 169, 170, 171, 172, 172, 173, 174, 174, 175, 176, 177, 177, 178, 179, 179, 180, 181, 182, 182, 183, 184, 184, 185, 186, 187, 187, 188, 189, 189, 190, 191, 192, 192, 193, 194, 194, 195, 196, 197, 197, 198, 199, 199, 200, 201, 202, 202, 203, 204, 204, 205, 206, 207, 207, 208, 209, 209, 210, 211, 211, 212, 213, 214, 214, 215, 216, 216, 217, 218, 219, 219, 220, 221, 221, 222, 223, 224, 224, 225, 226, 226, 227, 228, 229, 229, 230, 231, 231, 232, 233, 234, 234, 235, 236, 236, 237, 238, 239, 239, 240, 241, 241, 242, 243, 244, 244, 245, 246, 246, 247, 248, 249, 249, 250, 251, 251, 252, 253, 254, 255 };
+volatile uint16_t DMX_Indice = 0;                         //Loop variable for FrameDMX
+volatile uint8_t FrameDMX[TOTALCHANNELS]={0};       //Received DMX values
+volatile uint16_t dmx_start_address=0;                        //Starting address
+volatile uint8_t dmx_rx_ok=0;                      //RX valid variable                   
 
 /*Analog variables*/
-volatile unsigned char analog_index=0;   //ADC channel variable
-volatile unsigned char analog_buffer[4]={0,0,0,0}; // ADC out
+volatile uint8_t analog_index=0;   //ADC channel variable
+volatile uint8_t analog_buffer[4]={0,0,0,0}; // ADC out
 
 
 union  // Estructura para hacer una copia del registro RCSTA
    {
-   unsigned char registro;
-   struct {
-     unsigned char RX9D:1;
-     unsigned char OERR:1;
-     unsigned char FERR:1;
-     unsigned char ADDEN:1;
-     unsigned char CREN:1;
-     unsigned char SREN:1;
-     unsigned char RX9:1;
-     unsigned char SPEN:1;
-           } bits ;
-  }Copia_RCSTA;
+   uint8_t registro;
+   struct 
+   {
+     uint8_t RX9D:1;
+     uint8_t OERR:1;
+     uint8_t FERR:1;
+     uint8_t ADDEN:1;
+     uint8_t CREN:1;
+     uint8_t SREN:1;
+     uint8_t RX9:1;
+     uint8_t SPEN:1;
+    } bits ;
+  } Copia_RCSTA;
 
 
 void main(void)
 {        
     /*FOR 25K80*/
     
+    OSCCONbits.SCS = 0b00;   // Primary oscillator
+    OSCCONbits.IRCF = 0b110; // Internal oscillator running at 8 MHz too
+    
     TRISA  = 0b11111111;   //All analog inputs
-    TRISB  = 0b11001111;   //RB0-3 as address input, RB3 as DMX enable, RB5 as PWM output, RB7 defined as input by USART
+    TRISB  = 0b11011111;   //RB0-3 as address input, RB4 hi-Z, RB5 as PWM output, RB7 defined as input by USART
     TRISC  = 0b00111011;   //RC0-1 as input, RC2 as PWM output, RC3-5 as input, RC6-7 as PWM output
-        
-    OSCCON = 0b01111100;   //HS  oscillator @8Mhz
+         
     //SSPCON1bits.SSPEN=0; 
 
     /*Global CCP & Timer2 configuration*/
@@ -129,8 +131,6 @@ void main(void)
     ADCON2bits.ACQT=0b111;  //4 Tad auto adqusition
     ADCON2bits.ADCS=0b001;  //Fosc/8
 
-    dmx_rx_ok=0;               //Pre invalidate DMX frames
-
     /*USART configurations*/
     
     TXSTA2bits.BRGH=1;           // Alta velocidad seleccionada.
@@ -148,7 +148,7 @@ void main(void)
     
     /*Interrupt Configuration*/
     
-    RCONbits.IPEN=0;            //Interruption priority disable
+    RCONbits.IPEN=0;            //Interruption priority enable
     PIE3bits.RC2IE=1;           //EUSART Receiving Interrupt Enable
     PIR3bits.RC2IF=0;           //Clear EUSART interruption flag
     PIE1bits.ADIE = 0;          //Disable ADC interrupt
@@ -157,8 +157,7 @@ void main(void)
     INTCONbits.GIE_GIEH = 1;    //Global interrupts enable
     INTCONbits.PEIE_GIEL=1;     //Peripheral interrupts enable
     //INTCONbits.GIE_GIEH = 0;    //Global interrupts enable
-
-    dmx_en=1;                   //Switch on RS-485 receiver
+    
     dmx_start_address = 0;                   //Clear DMX starting address
     TMR0H=0; 
     TMR0L=0;
@@ -213,7 +212,7 @@ void main(void)
             set_PWM4(analog_buffer[1]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-1)]>analog_buffer[1]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-1)]>analog_buffer[1]) && dmx_rx_ok){
                 set_PWM4(FrameDMX[dmx_start_address+(CHANNELS-1)]);
             }
             else{
@@ -225,7 +224,7 @@ void main(void)
             set_PWM5(analog_buffer[0]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-2)]>analog_buffer[0]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-2)]>analog_buffer[0]) && dmx_rx_ok){
                 set_PWM5(FrameDMX[dmx_start_address+(CHANNELS-2)]);
             }
             else{
@@ -237,7 +236,7 @@ void main(void)
             set_PWM2(analog_buffer[3]);
         }
         else{
-            if((FrameDMX[dmx_start_address+(CHANNELS-3)]>analog_buffer[3]) && dmx_rx_ok && dmx_en){
+            if((FrameDMX[dmx_start_address+(CHANNELS-3)]>analog_buffer[3]) && dmx_rx_ok){
                 set_PWM2(FrameDMX[dmx_start_address+(CHANNELS-3)]);
             }
             else{
@@ -245,7 +244,7 @@ void main(void)
             } 
         }
         
-        if((FrameDMX[dmx_start_address]>analog_buffer[2]) && dmx_rx_ok && dmx_en){
+        if((FrameDMX[dmx_start_address]>analog_buffer[2]) && dmx_rx_ok){
             set_PWM3(FrameDMX[dmx_start_address]);
         }
         else{
@@ -258,45 +257,49 @@ void main(void)
 
 /*For 25k80*/
 
-int read_addr(void){
-    int number=0;
-    volatile unsigned char portb_val=PORTB;
-    volatile unsigned char portc_val=PORTC;
+uint16_t read_addr(void){
+    uint16_t number=0;
+    
+    /*
+    volatile uint8_t portb_val=PORTB;
+    volatile uint8_t portc_val=PORTC;
     
     number = ((portb_val & _PORTB_RB3_MASK) >> 3) | ((portb_val & _PORTB_RB2_MASK) >> 1) | ((portb_val & _PORTB_RB1_MASK) << 1) | ((portb_val & _PORTB_RB0_MASK) << 3) |
             ((portc_val & _PORTC_RC5_MASK) >> 1) | ((portc_val & _PORTC_RC4_MASK) << 1) | ((portc_val & _PORTC_RC3_MASK) << 3) | ((portc_val & _PORTC_RC1_MASK) << 6);
     number += (portc_val & _PORTC_RC0_MASK) * 256;
+    */
+     
+    if  (PORTCbits.RC0) number+=256;
+    if  (PORTCbits.RC1) number+=128;
+    if  (PORTCbits.RC3) number+=64;
+    if  (PORTCbits.RC4) number+=32;
+    if  (PORTCbits.RC5) number+=16;
     
-//    if  (PORTCbits.RC0) number+=256;
-//    if  (PORTCbits.RC1) number+=128;
-//    if  (PORTCbits.RC3) number+=64;
-//    if  (PORTCbits.RC4) number+=32;
-//    if  (PORTCbits.RC5) number+=16;
-//    if  (PORTBbits.RB0) number+=8;
-//    if  (PORTBbits.RB1) number+=4;
-//    if  (PORTBbits.RB2) number+=2;
-//    if  (PORTBbits.RB3) number+=1;
+    if  (PORTBbits.RB0) number+=8;
+    if  (PORTBbits.RB1) number+=4;
+    if  (PORTBbits.RB2) number+=2;
+    if  (PORTBbits.RB3) number+=1;
 
     return number;
 }
 
 
-void set_PWM2(unsigned char dc){
+void set_PWM2(uint8_t dc){
     CCPR2L=(dt_map[dc]>>2);
     CCP2CONbits.DC2B=(dt_map[dc] & 3);
 }
 
-void set_PWM3 (unsigned char dc){
+void set_PWM3 (uint8_t dc){
     CCPR3L=(dt_map[dc]>>2);
     CCP3CONbits.DC3B=(dt_map[dc] & 3);
 }
 
-void set_PWM4 (unsigned char dc){
+void set_PWM4 (uint8_t dc){
     CCPR4L=(dt_map[dc]>>2);
     CCP4CONbits.DC4B=(dt_map[dc] & 3);
 }
 
-void set_PWM5 (unsigned char dc){
+void set_PWM5 (uint8_t dc){
     CCPR5L=(dt_map[dc]>>2);
     CCP5CONbits.DC5B=(dt_map[dc] & 3);
 }
@@ -309,7 +312,7 @@ void __interrupt() ISR(void)
       T0CON=0;  //Stop timer
   }
     
-  while (PIR3bits.RC2IF) // ejecutamos mientras haya un dato pendiente de procesar
+   while (PIR3bits.RC2IF) // ejecutamos mientras haya un dato pendiente de procesar
    {
     // Hacemos una copia del registro RCSTA porque sus bits cambian de valor
     // al leer RCREG y modificar CREN
@@ -389,11 +392,7 @@ void __interrupt() ISR(void)
           // de nueva trama
           if (DMX_Indice >= TOTALCHANNELS || DMX_Indice >= dmx_start_address+CHANNELS){              
               dmx_rx_ok=1; //Valid frame
-          }
-          if (DMX_Indice >= TOTALCHANNELS ){
-              DMX_Estado = DMX_ESPERA_BREAK;
-          }
-
+          } 
         }
         break;
    }
